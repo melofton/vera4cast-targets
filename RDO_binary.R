@@ -1,6 +1,8 @@
 #' Generate binary DO targets
 #' ASL, 8 Aug 2023
 
+library(tidyverse)
+
 # FCR
 fcr_files <- c("https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f",
            "https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv")
@@ -15,7 +17,7 @@ fcr_do_sum <- fcr_df |>
   dplyr::summarise(Hypoxic_bin = as.numeric(mean(RDO_mgL_9, na.rm = T)<2))
 
 # BVR
-bvr_current <- readr::read_csv("https://github.com/FLARE-forecast/BVRE-data/blob/bvre-platform-data-qaqc/bvre-waterquality_L1.csv")
+bvr_current <- readr::read_csv("https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv")
 bvr_2020_2022 <- readr::read_csv("https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038")
 bvr_2016_2020 <- readr::read_csv("https://pasta.lternet.edu/package/data/eml/edi/725/3/38965aab7e21bf7a6157ba4d199c5e2c")
 
