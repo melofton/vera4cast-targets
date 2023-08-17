@@ -1,6 +1,6 @@
-# Title: Binary Bloom Target for VERA forecasts
+# Title: Generation of target files based on FluoroProbe data for VERA forecasts
 # Author: Mary Lofton
-# Date: 14Aug23
+# Date: 17Aug23
 
 # Load packages
 library(tidyverse)
@@ -20,7 +20,7 @@ df <- readr::read_csv(files) |>
   dplyr::select(DateTime, EXOChla_ugL_1) %>%
   dplyr::mutate(Date = lubridate::date(DateTime),
          Hour = lubridate::hour(DateTime)) %>%
-  dplyr::group_by(Date, Hour) %>%
+  dplyr::group_by(Date, Hour) %>% #change this to be separately calculated from raw data
   dplyr::summarize(Chla_ugL_mean = mean(EXOChla_ugL_1, na.rm = TRUE),
             Chla_ugL_sd = sd(EXOChla_ugL_1, na.rm = TRUE)) %>%
   dplyr::group_by(Date) %>%
