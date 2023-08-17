@@ -35,6 +35,7 @@ cleaning_function <- function(file_1, file_2){
 # https://github.com/FLARE-forecast/FCRE-data/blob/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv
 
 # targets file 
+targets_col_names <- c('datetime', 'site_id', 'depth', "observation", 'variable')
 
 # READ IN EDI FCRE Catwalk file 
 
