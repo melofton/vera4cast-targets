@@ -73,8 +73,7 @@ target_generation_exo_daily <- function (fcr_files,
                   depth_m = ifelse(site_id == "bvre", 1.5, NA)) |> 
     #dplyr::rename(depth_m = EXODepth_m) |> 
     dplyr::select(datetime, site_id, depth_m, observation, variable) |> 
-    dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |> 
-    dplyr::filter(!is.na(depth_m))
+    dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation))
   
   return(comb_sum)
 }

@@ -6,7 +6,7 @@
 #' @param fcr_files vector of files with identical format that are are from FCR
 #' @param bvr_current current BVR file
 #' @param bvr_2020_2022 EDI BVR publication
-#'@example target_generation_rdo_daily(fcr_files, bvr_current, bvr_2020_2022)
+#' @example target_generation_rdo_daily(fcr_files, bvr_current, bvr_2020_2022)
 #'
 #' @return dataframe of cleaned and combined RDO targets
 #'
@@ -62,14 +62,12 @@ target_generation_rdo_daily <- function (fcr_files,
   comb_sum <- fcr_sum |> 
     dplyr::bind_rows(bvr_sum) |> 
     dplyr::rename(datetime = Date) |> 
-    pivot_longer(cols = Hypoxia_binary_9:RDOsat_percent_13, 
-                 names_to = "variable", 
-                 values_to = "observation") |> 
-    mutate(depth_m = as.numeric(gsub("\\D", "", variable))) |> 
-    mutate(variable = sub("_[0-9]", "", variable)) |> 
-    select(datetime, site_id, depth_m, observation, variable) |> 
-    mutate(observation = ifelse(!is.finite(observation),NA,observation)) |> 
-    filter(!is.na(depth_m))
+    pivot_longer(cols = Hypoxia_binary_9:RDOsat_percent_13, names_to = "variable", values_to = "observation") |> 
+    dplyr::mutate(depth_m = as.numeric(gsub("\\D", "", variable))) |> 
+    dplyr::mutate(variable = sub("_[0-9]", "", variable)) |> 
+    dplyr::select(datetime, site_id, depth_m, observation, variable) |> 
+    dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation)) |> 
+    dplyr::filter(!is.na(depth_m))
   
   return(comb_sum)
 }
