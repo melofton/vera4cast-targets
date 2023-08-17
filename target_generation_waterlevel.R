@@ -1,14 +1,14 @@
 #' 
 #' @author Abigail Lewis
-#' @title target_generation_RDO_daily
-#' @description This function loads RDO data from FCR and BVR and generates daily targets for the vera forecasting challenge. Note that depth changes at bvre, here we are using static depth labels from EDI
+#' @title target_generation_waterlevel
+#' @description This function loads catwalk data from FCR and BVR and generates daily targets for the vera forecasting challenge
 #' 
 #' @param fcr_files vector of files with identical format that are are from FCR
 #' @param bvr_current current BVR file
 #' @param bvr_2020_2022 EDI BVR publication
 #'@example target_generation_rdo_daily(fcr_files, bvr_current, bvr_2020_2022)
 #'
-#' @return dataframe of cleaned and combined RDO targets
+#' @return dataframe of cleaned and combined water level
 #'
 
 library(tidyverse)
@@ -19,7 +19,7 @@ library(tidyverse)
 #bvr_2020_2022 <- c("https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038")
 #bvr_2016_2020 <- readr::read_csv("https://pasta.lternet.edu/package/data/eml/edi/725/3/38965aab7e21bf7a6157ba4d199c5e2c")
 
-target_generation_rdo_daily <- function (fcr_files, 
+target_generation_waterlevel <- function (fcr_files, 
                                    bvr_current, 
                                    bvr_2020_2022) {
   
@@ -41,35 +41,26 @@ target_generation_rdo_daily <- function (fcr_files,
   # FCR
   fcr_sum <- fcr_df |>
     dplyr::group_by(Date, site_id) |> #daily mean
-    dplyr::summarise(Hypoxia_binary_9 = as.numeric(mean(RDO_mgL_9, na.rm = T)<2),
-                     RDO_mgL_5 = mean(RDO_mgL_5, na.rm = T),
-                     RDOsat_percent_5 = mean(RDOsat_percent_5, na.rm = T),
-                     RDO_mgL_9 = mean(RDO_mgL_9, na.rm = T),
-                     RDOsat_percent_9 = mean(RDOsat_percent_9, na.rm = T))
+    dplyr::summarise(WaterLevel_m = mean(LvlDepth_m_9, na.rm = T))
+  message("Note: FCR water level probably also needs an offset, which we haven't figured out yet")
   
   # BVR
   bvr_sum <- bvr_df |> 
     dplyr::group_by(Date, site_id) |> #daily mean
-    dplyr::summarise(Hypoxia_binary_13 = as.numeric(mean(RDO_mgL_13, na.rm = T) < 2),
-                     RDO_mgL_6 = mean(RDO_mgL_6, na.rm = T),
-                     RDOsat_percent_6 = mean(RDOsat_percent_6, na.rm = T),
-                     RDO_mgL_13 = mean(RDO_mgL_13, na.rm = T),
-                     RDOsat_percent_13 = mean(RDOsat_percent_13, na.rm = T)
-                     )
-  message("Depths at BVR should potentially respond to changing water level. Keeping a message here so we remember to address this")
+    dplyr::summarise(WaterLevel_m = mean(Depth_m_13 + 0.2, na.rm = T))
   
   #Combine
   comb_sum <- fcr_sum |> 
     dplyr::bind_rows(bvr_sum) |> 
     dplyr::rename(datetime = Date) |> 
-    pivot_longer(cols = Hypoxia_binary_9:RDOsat_percent_13, 
+    pivot_longer(cols = WaterLevel_m, 
                  names_to = "variable", 
                  values_to = "observation") |> 
-    mutate(depth_m = as.numeric(gsub("\\D", "", variable))) |> 
-    mutate(variable = sub("_[0-9]", "", variable)) |> 
+    mutate(depth_m = NA) |> 
     select(datetime, site_id, depth_m, observation, variable) |> 
-    mutate(observation = ifelse(!is.finite(observation),NA,observation)) |> 
-    filter(!is.na(depth_m))
+    mutate(observation = ifelse(!is.finite(observation),NA,observation))
   
   return(comb_sum)
 }
+
+target_generation_waterlevel(fcr_files, bvr_current, bvr_2020_2022) |> filter(!is.na(observation))
