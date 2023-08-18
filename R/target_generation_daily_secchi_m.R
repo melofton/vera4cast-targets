@@ -8,14 +8,17 @@ library(dplyr)
 # install.packages('googlesheets4')
 #Load the library 
 library(googlesheets4)
+library(janitor)
+library(tibble)
 
 
 target_generation_daily_secchi_m <- function(current, edi){
   #read in the google sheet for secchi
-  secchi_current_1 <- read_sheet(current)
+  #this does not read in in UTC
+  secchi_current <- read_sheet(current)
   
-  #EDI data link
-  #https://portal.edirepository.org/nis/mapbrowse?packageid=edi.198.11
+#subset to only one spot in the reservoir (deep hole)
+  secchi_current_1 <- secchi_current %>% subset(Site=="50") 
   
   #read in the EDI data
   inUrl1  <- edi 
@@ -23,6 +26,8 @@ target_generation_daily_secchi_m <- function(current, edi){
   try(download.file(inUrl1,infile1,method="curl"))
   if (is.na(file.size(infile1))) download.file(inUrl1,infile1,method="auto")
   edi <-read_csv(infile1)
+#subset to only one spot in the reservoir (deep hole)
+  edi_1 <- edi %>% subset(Site == "50")
   
   #site ids: BVR > bvre
   
@@ -31,7 +36,7 @@ target_generation_daily_secchi_m <- function(current, edi){
   #BVR>bvre, FCR>fcre
   #secchi doesn't have an associated depth, secchi_m is an observation, need to create a depth column
   #need to create a variable column: add a column with every row = secchi_m
-  secchi_edi <- subset(edi, select = c(DateTime, Reservoir, Secchi_m))
+  secchi_edi <- subset(edi_1, select = c("DateTime", "Reservoir", "Secchi_m"))
   
   #should fit the format: targets_col_names <- c('datetime', 'site_id', 'depth', "observation", 'variable')
   #Reservoir = site_id, will need to change from upper to lower and add an e on the end of all the reservoirs so 
@@ -48,8 +53,6 @@ target_generation_daily_secchi_m <- function(current, edi){
   #rename to site_id
   #mutate all BVR > bvre, FCR>fcre
   
-  library(janitor)
-  library(tibble)
   #change colnames to lowercase, add columns, rename and reorder columns to match scheme
   comb_secchi_1 <- comb_secchi %>% 
     clean_names %>% 
@@ -69,20 +72,21 @@ target_generation_daily_secchi_m <- function(current, edi){
     mutate(site_id = replace(site_id, site_id == "SHR", "shre"))
   
   comb_secchi_4 <- comb_secchi_2 %>% 
-    distinct(datetime, depth, .keep_all=TRUE)
+    distinct(datetime, observation, .keep_all=TRUE)
+  
+  comb_secchi_5 <- comb_secchi_4 %>% 
+    group_by(datetime, site_id, depth, variable) %>% 
+    summarise(across(c(observation),mean))
   
   #to check site ids
   # site_id <- unique(comb_secchi_2$site_id) 
   
-
   
-return(comb_secchi_4)
-  }
+  
+  return(comb_secchi_5)
+}
 
 secchi <- target_generation_daily_secchi_m(current = 'https://docs.google.com/spreadsheets/d/1fvM0fDRliuthicQWZT7c9RYErikI5DwrzbOC7TCoMGI/edit#gid=1172894977', 
-                                 edi = "https://pasta.lternet.edu/package/data/eml/edi/198/11/81f396b3e910d3359907b7264e689052")
-
-
-
+                                           edi = "https://pasta.lternet.edu/package/data/eml/edi/198/11/81f396b3e910d3359907b7264e689052")
 
 
