@@ -1,7 +1,5 @@
-historic_file  <- "https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f"
-current_file <- "https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv"
 
-#  ThermistorTemp_C functions (daily and hourly) --------------------------
+# ThermistorTemp_C functions (daily and hourly) --------------------------
 
 target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file){
 
@@ -20,10 +18,15 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
                                      ifelse(Reservoir == 'BVR',
                                             'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
+    na.omit() |>
     dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
-    rename(site_id = Reservoir,
-           datetime = date)
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 144/2, NA, observation)) |> # 144 = 24(hrs) * 6(10 minute intervals/hr)
+    dplyr::rename(site_id = Reservoir,
+                  datetime = date) |>
+    dplyr::select(-n)
   message('Current file ready')
 
   # read in historical data file
@@ -45,16 +48,21 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
                                         'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
     dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
-    rename(site_id = Reservoir,
-           datetime = date)
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 144/2, NA, observation)) |> # 144 = 24(hrs) * 6(10 minute intervals/hr)
+
+    dplyr::rename(site_id = Reservoir,
+           datetime = date) |>
+    dplyr::select(-n)
   message('EDI file ready')
 
   ## manipulate the data files to match each other
 
 
   ## bind the two files using row.bind()
-  final_df <- bind_rows(historic_df, current_df) |>
+  final_df <- dplyr::bind_rows(historic_df, current_df) |>
     dplyr::mutate(variable = 'ThermistorTemp_C')
   ## Match data to flare targets file
   # Use pivot_longer to create a long-format table
@@ -82,10 +90,14 @@ target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_fil
                                      ifelse(Reservoir == 'BVR',
                                             'bvre', NA)),
                   date = lubridate::as_datetime(paste0(format(DateTime, "%Y-%m-%d %H"), ":00:00"))) |>
-    dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
-    rename(site_id = Reservoir,
-           datetime = date)
+    dplyr::group_by(date, Reservoir, depth)  |>
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 6/2, NA, observation)) |>  # 6 = 6(10 minute intervals/hr)
+    dplyr::rename(site_id = Reservoir,
+           datetime = date) |>
+    dplyr::select(-n)
   message('Current file ready')
 
   # read in historical data file
@@ -106,17 +118,22 @@ target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_fil
                                      ifelse(Reservoir == 'BVR',
                                             'bvre', NA)),
                   date = lubridate::as_datetime(paste0(format(DateTime, "%Y-%m-%d %H"), ":00:00"))) |>
-    dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
-    rename(site_id = Reservoir,
-           datetime = date)
+    dplyr::group_by(date, Reservoir, depth)  |>
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 6/2, NA, observation)) |> # 6 = 6(10 minute intervals/hr)
+    dplyr::rename(site_id = Reservoir,
+           datetime = date)|>
+    dplyr::select(-n)
+
   message('EDI file ready')
 
   ## manipulate the data files to match each other
 
 
   ## bind the two files using row.bind()
-  final_df <- bind_rows(historic_df, current_df) |>
+  final_df <- dplyr::bind_rows(historic_df, current_df) |>
     dplyr::mutate(variable = 'ThermistorTemp_C')
   ## Match data to flare targets file
   # Use pivot_longer to create a long-format table
@@ -152,8 +169,11 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
                                             'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
     dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
-    rename(site_id = Reservoir,
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 144/2, NA, observation)) |> # 144 = 24 * 6(10 minute intervals/hr)
+    dplyr::rename(site_id = Reservoir,
            datetime = date)
 
   message('Current file ready')
@@ -177,7 +197,10 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
                                             'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
     dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 144/2, NA, observation)) |> # 144 = 24 * 6(10 minute intervals/hr)
     dplyr::rename(site_id = Reservoir,
            datetime = date)
   message('EDI file ready')
@@ -230,8 +253,11 @@ target_generation_SummerStratified_binary <- function(current_file, historic_fil
                                             'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
     dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
-    rename(site_id = Reservoir,
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 144/2, NA, observation)) |> # 144 = 24 * 6(10 minute intervals/hr)
+    dplyr::rename(site_id = Reservoir,
            datetime = date)
 
   message('Current file ready')
@@ -255,7 +281,10 @@ target_generation_SummerStratified_binary <- function(current_file, historic_fil
                                             'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
     dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 144/2, NA, observation)) |> # 144 = 24 * 6(10 minute intervals/hr)
     dplyr::rename(site_id = Reservoir,
                   datetime = date)
   message('EDI file ready')
@@ -308,8 +337,11 @@ target_generation_InverseStratified_binary <- function(current_file, historic_fi
                                             'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
     dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
-    rename(site_id = Reservoir,
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 144/2, NA, observation)) |> # 144 = 24 * 6(10 minute intervals/hr)
+    dplyr::rename(site_id = Reservoir,
            datetime = date)
 
   message('Current file ready')
@@ -333,7 +365,10 @@ target_generation_InverseStratified_binary <- function(current_file, historic_fi
                                             'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
     dplyr::group_by(date, Reservoir, depth) |>
-    dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
+    dplyr::summarise(observation = mean(observation, na.rm = T),
+                     n = dplyr::n(),
+                     .groups = 'drop') |>
+    dplyr::mutate(observation = ifelse(n < 144/2, NA, observation)) |> # 144 = 24 * 6(10 minute intervals/hr)
     dplyr::rename(site_id = Reservoir,
                   datetime = date)
   message('EDI file ready')
