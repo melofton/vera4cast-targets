@@ -224,7 +224,10 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
                        values_from = density) |>
     dplyr::mutate(dens_diff = dens_1 - dens_8,
                   NotStratified_binary = ifelse(abs(dens_diff) < 0.1, 1, 0)) |>
-    dplyr::select(datetime, site_id, NotStratified_binary)
+    dplyr::select(datetime, site_id, NotStratified_binary) |>
+    tidyr::pivot_longer(cols = NotStratified_binary,
+                        names_to = 'variable',
+                        values_to = 'observation')
 
   ## Match data to flare targets file
   # Use pivot_longer to create a long-format table
@@ -308,7 +311,10 @@ target_generation_SummerStratified_binary <- function(current_file, historic_fil
                   temp_diff = observation_1 - observation_8,
                   SummerStratified_binary = ifelse(abs(dens_diff) > 0.1 & #stratified
                                                   temp_diff > 0, 1, 0)) |> #surface warmer than bottom
-    dplyr::select(datetime, site_id, SummerStratified_binary)
+    dplyr::select(datetime, site_id, SummerStratified_binary) |>
+    tidyr::pivot_longer(cols = SummerStratified_binary,
+                        names_to = 'variable',
+                        values_to = 'observation')
 
   ## Match data to flare targets file
   # Use pivot_longer to create a long-format table
@@ -392,7 +398,10 @@ target_generation_InverseStratified_binary <- function(current_file, historic_fi
                   temp_diff = observation_1 - observation_8,
                   InverseStratified_binary = ifelse(abs(dens_diff) > 0.1 & #stratified
                                                      temp_diff < 0, 1, 0)) |> #surface cooler than bottom
-    dplyr::select(datetime, site_id, InverseStratified_binary)
+    dplyr::select(datetime, site_id, InverseStratified_binary) |>
+    tidyr::pivot_longer(cols = InverseStratified_binary,
+                        names_to = 'variable',
+                        values_to = 'observation')
 
   ## Match data to flare targets file
   # Use pivot_longer to create a long-format table
