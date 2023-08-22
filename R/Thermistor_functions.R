@@ -1,6 +1,8 @@
 historic_file  <- "https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f"
 current_file <- "https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv"
 
+#  ThermistorTemp_C functions (daily and hourly) --------------------------
+
 target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file){
 
   ## read in current data file
@@ -18,7 +20,7 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
                                      ifelse(Reservoir == 'BVR',
                                             'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
-    dplyr::group_by(date, Reservoir) |>
+    dplyr::group_by(date, Reservoir, depth) |>
     dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
     rename(site_id = Reservoir,
            datetime = date)
@@ -29,7 +31,7 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
   infile <- tempfile()
   try(download.file(historic_file, infile, method="curl"))
   if (is.na(file.size(infile))) download.file(historic_file,infile,method="auto")
-  historic_df <- readr::read_csv(infile) |>
+  historic_df <- readr::read_csv(infile, show_col_types = F) |>
     dplyr::filter(Site == 50) |>
     dplyr::select(Reservoir, DateTime,
                   dplyr::starts_with('ThermistorTemp')) |>
@@ -42,7 +44,7 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
                                  ifelse(Reservoir == 'BVR',
                                         'bvre', NA)),
                   date = lubridate::as_date(DateTime)) |>
-    dplyr::group_by(date, Reservoir) |>
+    dplyr::group_by(date, Reservoir, depth) |>
     dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
     rename(site_id = Reservoir,
            datetime = date)
@@ -62,7 +64,6 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
   ## return dataframe formatted to match FLARE targets
   return(final_df)
 }
-
 
 target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_file){
 
@@ -81,7 +82,7 @@ target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_fil
                                      ifelse(Reservoir == 'BVR',
                                             'bvre', NA)),
                   date = lubridate::as_datetime(paste0(format(DateTime, "%Y-%m-%d %H"), ":00:00"))) |>
-    dplyr::group_by(date, Reservoir) |>
+    dplyr::group_by(date, Reservoir, depth) |>
     dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
     rename(site_id = Reservoir,
            datetime = date)
@@ -92,7 +93,7 @@ target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_fil
   infile <- tempfile()
   try(download.file(historic_file, infile, method="curl"))
   if (is.na(file.size(infile))) download.file(historic_file,infile,method="auto")
-  historic_df <- readr::read_csv(infile) |>
+  historic_df <- readr::read_csv(infile, show_col_types = F) |>
     dplyr::filter(Site == 50) |>
     dplyr::select(Reservoir, DateTime,
                   dplyr::starts_with('ThermistorTemp')) |>
@@ -105,7 +106,7 @@ target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_fil
                                      ifelse(Reservoir == 'BVR',
                                             'bvre', NA)),
                   date = lubridate::as_datetime(paste0(format(DateTime, "%Y-%m-%d %H"), ":00:00"))) |>
-    dplyr::group_by(date, Reservoir) |>
+    dplyr::group_by(date, Reservoir, depth) |>
     dplyr::summarise(observation = mean(observation), .groups = 'drop') |>
     rename(site_id = Reservoir,
            datetime = date)
@@ -126,4 +127,4 @@ target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_fil
   return(final_df)
 }
 
-
+#==============================================#
