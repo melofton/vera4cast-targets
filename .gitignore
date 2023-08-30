@@ -20,6 +20,7 @@
 
 # RStudio files
 .Rproj.user/
+vera4cast-targets.Rproj
 
 # produced vignettes
 vignettes/*.html
@@ -47,3 +48,10 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Mac files
+.DS_Store
+
+# Data files downloaded for bloom threshold calculation
+/R/bloom_threshold/FCR_Catwalk_EDI_2018_2022.csv
+/R/bloom_threshold/BVR_platform_data_2020_2022.csv
