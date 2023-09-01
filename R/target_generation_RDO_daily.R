@@ -20,8 +20,7 @@ library(tidyverse)
 #bvr_2016_2020 <- readr::read_csv("https://pasta.lternet.edu/package/data/eml/edi/725/3/38965aab7e21bf7a6157ba4d199c5e2c")
 
 target_generation_rdo_daily <- function (fcr_files, 
-                                   bvr_current, 
-                                   bvr_2020_2022) {
+                                        bvr_files) {
   
   # Load FCR data
   fcr_df <- readr::read_csv(fcr_files) |> 
@@ -31,11 +30,11 @@ target_generation_rdo_daily <- function (fcr_files,
                   Date = as.Date(DateTime))
   
   # Load BVR data
-  bvr_df <- dplyr::bind_rows(bvr_current, bvr_2020_2022) |> 
+  bvr_df <- readr::read_csv(bvr_files) |> 
     dplyr::mutate(site_id = "bvre",
                   DateTime = lubridate::force_tz(DateTime, tzone = "EST"),
                   DateTime = lubridate::with_tz(DateTime, tzone = "UTC"),
-                  Date = as.Date(DateTime)) 
+                  Date = as.Date(DateTime))
   
   # Format data to combine
   # FCR

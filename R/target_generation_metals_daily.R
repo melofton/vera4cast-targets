@@ -2,7 +2,7 @@
 # Author: Adrienne Breef-Pilz
 # 24 Aug 2023
 
-generate_metals_targets_function <- function(current_data_file, edi_data_file){
+target_generation_metals_daily <- function(current_data_file, edi_data_file){
   
   ## read in current data file 
   # ABP talk to Cece about getting a realtime metals files collated on GitHub 
@@ -45,7 +45,7 @@ generate_metals_targets_function <- function(current_data_file, edi_data_file){
 }
 
 # Using the function with the EDI address for data
- # generate_metals_targets_function(
+ # target_generation_metals_daily(
  #  current_data_file=NULL, 
  #  edi_data_file="https://pasta.lternet.edu/package/data/eml/edi/455/7/e71d70cac1650610e6a3fbbf7928007f") 
 
