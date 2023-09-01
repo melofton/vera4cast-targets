@@ -210,6 +210,7 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
   ## extract the depths that will be used to calculate the mixing metric (surface, bottom)
   depths_use <- dplyr::bind_rows(historic_df, current_df)  |>
     dplyr::mutate(depth = ifelse(depth == "surface", 0, depth)) |>
+    na.omit() |>
     dplyr::group_by(datetime) |>
     dplyr::summarise(top = min(as.numeric(depth)),
               bottom = max(as.numeric(depth))) |>
@@ -299,6 +300,7 @@ target_generation_SummerStratified_binary <- function(current_file, historic_fil
 
   depths_use <- dplyr::bind_rows(historic_df, current_df)  |>
     dplyr::mutate(depth = ifelse(depth == "surface", 0, depth)) |>
+    na.omit() |>
     dplyr::group_by(datetime) |>
     dplyr::summarise(top = min(as.numeric(depth)),
                      bottom = max(as.numeric(depth))) |>
