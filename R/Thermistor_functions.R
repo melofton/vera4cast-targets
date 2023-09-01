@@ -209,8 +209,8 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
 
   depths_use <- current_df |>
     dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
-    dplyr::summarise(top = min(depth) + 1,
-              bottom = max(depth) - 1)
+    dplyr::summarise(top = min(depth),
+              bottom = max(depth))
 
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
@@ -220,10 +220,10 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
     dplyr::mutate(density = rLakeAnalyzer::water.density(observation)) |>
     dplyr::select(-observation) |>
     tidyr::pivot_wider(names_from = depth,
-                       names_prefix = 'dens_',
+                       names_prefix = 'density_',
                        values_from = density) |>
-    dplyr::mutate(dens_diff = dens_1 - dens_8,
-                  NotStratified_binary = ifelse(abs(dens_diff) < 0.1, 1, 0)) |>
+    dplyr::mutate(densitydiff = get(paste0('density_', depths_use$top)) - get(paste0('density_', depths_use$bottom)),
+                  NotStratified_binary = ifelse(abs(densitydiff) < 0.1, 1, 0)) |>
     dplyr::select(datetime, site_id, NotStratified_binary) |>
     tidyr::pivot_longer(cols = NotStratified_binary,
                         names_to = 'variable',
@@ -307,9 +307,9 @@ target_generation_SummerStratified_binary <- function(current_file, historic_fil
     dplyr::mutate(density = rLakeAnalyzer::water.density(observation)) |>
     tidyr::pivot_wider(names_from = depth,
                        values_from = observation:density) |>
-    dplyr::mutate(dens_diff = density_1 - density_8,
-                  temp_diff = observation_1 - observation_8,
-                  SummerStratified_binary = ifelse(abs(dens_diff) > 0.1 & #stratified
+    dplyr::mutate(densitydiff = get(paste0('density_', depths_use$top)) - get(paste0('density_', depths_use$bottom)),
+                  temp_diff = get(paste0('observation_', depths_use$top)) - get(paste0('observation_', depths_use$bottom)),
+                  SummerStratified_binary = ifelse(abs(densitydiff) > 0.1 & #stratified
                                                   temp_diff > 0, 1, 0)) |> #surface warmer than bottom
     dplyr::select(datetime, site_id, SummerStratified_binary) |>
     tidyr::pivot_longer(cols = SummerStratified_binary,
@@ -394,9 +394,9 @@ target_generation_InverseStratified_binary <- function(current_file, historic_fi
     dplyr::mutate(density = rLakeAnalyzer::water.density(observation)) |>
     tidyr::pivot_wider(names_from = depth,
                        values_from = observation:density) |>
-    dplyr::mutate(dens_diff = density_1 - density_8,
-                  temp_diff = observation_1 - observation_8,
-                  InverseStratified_binary = ifelse(abs(dens_diff) > 0.1 & #stratified
+    dplyr::mutate(densitydiff = get(paste0('density_', depths_use$top)) - get(paste0('density_', depths_use$bottom)),
+                  temp_diff = get(paste0('observation_', depths_use$top)) - get(paste0('observation_', depths_use$bottom)),
+                  InverseStratified_binary = ifelse(abs(densitydiff) > 0.1 & #stratified
                                                      temp_diff < 0, 1, 0)) |> #surface cooler than bottom
     dplyr::select(datetime, site_id, InverseStratified_binary) |>
     tidyr::pivot_longer(cols = InverseStratified_binary,
