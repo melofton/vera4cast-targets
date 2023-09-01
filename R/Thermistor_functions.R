@@ -63,7 +63,8 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
 
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
-    dplyr::mutate(variable = 'ThermistorTemp_C')
+    dplyr::mutate(variable = 'ThermistorTemp_C',
+                  depth = as.numeric(ifelse(depth == "surface", 0, depth)))
   ## Match data to flare targets file
   # Use pivot_longer to create a long-format table
   # for time specific - use midnight UTC values for daily
@@ -134,7 +135,8 @@ target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_fil
 
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
-    dplyr::mutate(variable = 'ThermistorTemp_C')
+    dplyr::mutate(variable = 'ThermistorTemp_C',
+                  depth = as.numeric(ifelse(depth == "surface", 0, depth)))
   ## Match data to flare targets file
   # Use pivot_longer to create a long-format table
   # for time specific - use midnight UTC values for daily
@@ -205,25 +207,26 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
            datetime = date)
   message('EDI file ready')
 
-  ## extract the depths that will be used to calculate the mixing metric (1 m below surface, 1 m below bottom)
-
-  depths_use <- current_df |>
-    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
-    dplyr::summarise(top = min(depth),
-              bottom = max(depth))
+  ## extract the depths that will be used to calculate the mixing metric (surface, bottom)
+  depths_use <- dplyr::bind_rows(historic_df, current_df)  |>
+    dplyr::mutate(depth = ifelse(depth == "surface", 0, depth)) |>
+    dplyr::group_by(datetime) |>
+    dplyr::summarise(top = min(as.numeric(depth)),
+              bottom = max(as.numeric(depth))) |>
+    tidyr::pivot_longer(cols = top:bottom,
+                        values_to = 'depth')
 
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
-
-    dplyr::filter(depth == depths_use$top |
-             depth == depths_use$bottom) |>
+    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
+    dplyr::right_join(depths_use, by = c('datetime', 'depth')) |>
     dplyr::mutate(density = rLakeAnalyzer::water.density(observation)) |>
-    dplyr::select(-observation) |>
-    tidyr::pivot_wider(names_from = depth,
+    dplyr::select(-observation, -depth) |>
+    tidyr::pivot_wider(names_from = name,
                        names_prefix = 'density_',
                        values_from = density) |>
-    dplyr::mutate(densitydiff = get(paste0('density_', depths_use$top)) - get(paste0('density_', depths_use$bottom)),
-                  NotStratified_binary = ifelse(abs(densitydiff) < 0.1, 1, 0)) |>
+    dplyr::mutate(density_diff = density_top - density_bottom,
+                  NotStratified_binary = ifelse(abs(density_diff) < 0.1, 1, 0)) |>
     dplyr::select(datetime, site_id, NotStratified_binary) |>
     tidyr::pivot_longer(cols = NotStratified_binary,
                         names_to = 'variable',
@@ -294,22 +297,25 @@ target_generation_SummerStratified_binary <- function(current_file, historic_fil
 
   ## extract the depths that will be used to calculate the mixing metric (1 m below surface, 1 m below bottom)
 
-  depths_use <- current_df |>
-    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
-    dplyr::summarise(top = min(depth) + 1,
-                     bottom = max(depth) - 1)
+  depths_use <- dplyr::bind_rows(historic_df, current_df)  |>
+    dplyr::mutate(depth = ifelse(depth == "surface", 0, depth)) |>
+    dplyr::group_by(datetime) |>
+    dplyr::summarise(top = min(as.numeric(depth)),
+                     bottom = max(as.numeric(depth))) |>
+    tidyr::pivot_longer(cols = top:bottom,
+                        values_to = 'depth')
 
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
-
-    dplyr::filter(depth == depths_use$top |
-                    depth == depths_use$bottom) |>
+    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
+    dplyr::right_join(depths_use, by = c('datetime', 'depth')) |>
     dplyr::mutate(density = rLakeAnalyzer::water.density(observation)) |>
-    tidyr::pivot_wider(names_from = depth,
+    dplyr::select(-depth) |>
+    tidyr::pivot_wider(names_from = name,
                        values_from = observation:density) |>
-    dplyr::mutate(densitydiff = get(paste0('density_', depths_use$top)) - get(paste0('density_', depths_use$bottom)),
-                  temp_diff = get(paste0('observation_', depths_use$top)) - get(paste0('observation_', depths_use$bottom)),
-                  SummerStratified_binary = ifelse(abs(densitydiff) > 0.1 & #stratified
+    dplyr::mutate(density_diff = density_top - density_bottom,
+                  temp_diff = observation_top - observation_bottom,
+                  SummerStratified_binary = ifelse(abs(density_diff) > 0.1 & #stratified
                                                   temp_diff > 0, 1, 0)) |> #surface warmer than bottom
     dplyr::select(datetime, site_id, SummerStratified_binary) |>
     tidyr::pivot_longer(cols = SummerStratified_binary,
@@ -381,22 +387,26 @@ target_generation_InverseStratified_binary <- function(current_file, historic_fi
 
   ## extract the depths that will be used to calculate the mixing metric (1 m below surface, 1 m below bottom)
 
-  depths_use <- current_df |>
-    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
-    dplyr::summarise(top = min(depth) + 1,
-                     bottom = max(depth) - 1)
+  depths_use <- dplyr::bind_rows(historic_df, current_df)  |>
+    dplyr::mutate(depth = ifelse(depth == "surface", 0, depth)) |>
+    na.omit() |>
+    dplyr::group_by(datetime) |>
+    dplyr::summarise(top = min(as.numeric(depth)),
+                     bottom = max(as.numeric(depth))) |>
+    tidyr::pivot_longer(cols = top:bottom,
+                        values_to = 'depth')
 
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
-
-    dplyr::filter(depth == depths_use$top |
-                    depth == depths_use$bottom) |>
+    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
+    dplyr::right_join(depths_use, by = c('datetime', 'depth')) |>
     dplyr::mutate(density = rLakeAnalyzer::water.density(observation)) |>
-    tidyr::pivot_wider(names_from = depth,
+    dplyr::select(-depth) |>
+    tidyr::pivot_wider(names_from = name,
                        values_from = observation:density) |>
-    dplyr::mutate(densitydiff = get(paste0('density_', depths_use$top)) - get(paste0('density_', depths_use$bottom)),
-                  temp_diff = get(paste0('observation_', depths_use$top)) - get(paste0('observation_', depths_use$bottom)),
-                  InverseStratified_binary = ifelse(abs(densitydiff) > 0.1 & #stratified
+    dplyr::mutate(density_diff = density_top - density_bottom,
+                  temp_diff = observation_top - observation_bottom,
+                  InverseStratified_binary = ifelse(abs(density_diff) > 0.1 & #stratified
                                                      temp_diff < 0, 1, 0)) |> #surface cooler than bottom
     dplyr::select(datetime, site_id, InverseStratified_binary) |>
     tidyr::pivot_longer(cols = InverseStratified_binary,
