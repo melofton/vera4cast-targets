@@ -5,25 +5,25 @@
 if (!require("pacman"))install.packages("pacman")
 pacman::p_load(utils, tidyverse)
 
-targets_generation_daily_MOM <- function(file1, file2){
+targets_generation_daily_MOM <- function(current_file, historic_file){
   
   #read in current CTD data
   #PLACEHOLDER for pulling in csv files off of github and then merging to one big file
   
   #download CTD data from EDI
-  file2  <- "https://pasta.lternet.edu/package/data/eml/edi/200/13/27ceda6bc7fdec2e7d79a6e4fe16ffdf" 
+  historic_file  <- "https://pasta.lternet.edu/package/data/eml/edi/200/13/27ceda6bc7fdec2e7d79a6e4fe16ffdf" 
   infile1 <- tempfile()
-  try(download.file(file2,infile1,method="curl"))
+  try(download.file(historic_file,infile1,method="curl"))
   if (is.na(file.size(infile1))) download.file(inUrl1,infile1,method="auto")
-  historic_file <- read_csv(infile1) |> filter(Site == 50, Reservoir == "FCR", Depth_m > 0)
+  historic_df <- read_csv(infile1) |> filter(Site == 50, Reservoir == "FCR", Depth_m > 0)
   
   #select cols needed to generate targets
   #file1 <- file1 |> select()
-  historic_file <- historic_file |> select(c(DateTime,Reservoir,Depth_m,DO_mgL))
+  historic_df <- historic_df |> select(c(DateTime,Reservoir,Depth_m,DO_mgL))
   
   #combine current and historic ctd data
-  #DO <- dplyr::bind_rows(file1, historic_file) #use this once we get current data incorporated 
-  DO <- dplyr::bind_rows(historic_file)
+  #DO <- dplyr::bind_rows(current_df, historic_df) #use this once we get current data incorporated 
+  DO <- dplyr::bind_rows(historic_df)
   
   #change reservoir site name
   DO$Reservoir <- "fcre"
@@ -50,9 +50,6 @@ targets_generation_daily_MOM <- function(file1, file2){
   
   #Depth is na bc full water column variable
   MOM_binary$depth_m <- NA
-  
-  #add upper and lower bounds next!
-  
   
   # return dataframe formatted to match FLARE targets
   return(MOM_binary)
