@@ -81,5 +81,5 @@ generate_schmidt_stability <- function(current_file, historic_file) {
                         names_prefix = 'mean_',
                         values_to = 'observation')
   ## Match data to flare targets file
-
+ return(final_df)
 }
