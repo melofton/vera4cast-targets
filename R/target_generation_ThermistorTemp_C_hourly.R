@@ -74,4 +74,4 @@ target_generation_ThermistorTemp_C_hourly <- function(current_file, historic_fil
   return(final_df)
 }
 
-a <- target_generation_ThermistorTemp_C_hourly(current_file = bvr_current, historic_file = bvr_historic)
+#a <- target_generation_ThermistorTemp_C_hourly(current_file = bvr_current, historic_file = bvr_historic)

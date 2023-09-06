@@ -1,13 +1,12 @@
 # FO
 
-bvr_current <- c("https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv")
-bvr_historic <- c("https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038")
+# bvr_current <- c("https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv")
+# bvr_historic <- c("https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038")
 
 # fcr_current <- "https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv"
 # fcr_historic <- "https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f"
   
 target_generation_NotStratified_binary <- function(current_file, historic_file){
-  
   ## read in current data file
   # Github, Googlesheet, etc.
   current_df <- readr::read_csv(current_file, show_col_types = F)|>
@@ -60,25 +59,27 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
                   datetime = date)
   message('EDI file ready')
   
-  ## extract the depths that will be used to calculate the mixing metric (1 m below surface, 1 m below bottom)
-  
-  depths_use <- current_df |>
-    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
-    dplyr::summarise(top = min(depth) + 1,
-                     bottom = max(depth) - 1)
+  ## extract the depths that will be used to calculate the mixing metric (surface, bottom)
+  depths_use <- dplyr::bind_rows(historic_df, current_df)  |>
+    dplyr::mutate(depth = ifelse(depth == "surface", 0, depth)) |>
+    na.omit() |>
+    dplyr::group_by(datetime) |>
+    dplyr::summarise(top = min(as.numeric(depth)),
+                     bottom = max(as.numeric(depth))) |>
+    tidyr::pivot_longer(cols = top:bottom,
+                        values_to = 'depth')
   
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
-    
-    dplyr::filter(depth == depths_use$top |
-                    depth == depths_use$bottom) |>
+    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
+    dplyr::right_join(depths_use, by = c('datetime', 'depth')) |>
     dplyr::mutate(density = rLakeAnalyzer::water.density(observation)) |>
-    dplyr::select(-observation) |>
-    tidyr::pivot_wider(names_from = depth,
-                       names_prefix = 'dens_',
+    dplyr::select(-observation, -depth) |>
+    tidyr::pivot_wider(names_from = name,
+                       names_prefix = 'density_',
                        values_from = density) |>
-    dplyr::mutate(dens_diff = dens_1 - dens_8,
-                  NotStratified_binary = ifelse(abs(dens_diff) < 0.1, 1, 0)) |>
+    dplyr::mutate(density_diff = density_top - density_bottom,
+                  NotStratified_binary = ifelse(abs(density_diff) < 0.1, 1, 0)) |>
     dplyr::select(datetime, site_id, NotStratified_binary) |>
     tidyr::pivot_longer(cols = NotStratified_binary,
                         names_to = 'variable',
@@ -92,3 +93,5 @@ target_generation_NotStratified_binary <- function(current_file, historic_file){
   ## return dataframe formatted to match FLARE targets
   return(final_df)
 }
+
+#a <- target_generation_NotStratified_binary(current_file = bvr_current, historic_file = bvr_historic)

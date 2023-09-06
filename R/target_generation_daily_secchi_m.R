@@ -86,7 +86,7 @@ target_generation_daily_secchi_m <- function(current, edi){
   return(comb_secchi_5)
 }
 
-secchi <- target_generation_daily_secchi_m(current = 'https://docs.google.com/spreadsheets/d/1fvM0fDRliuthicQWZT7c9RYErikI5DwrzbOC7TCoMGI/edit#gid=1172894977', 
-                                           edi = "https://pasta.lternet.edu/package/data/eml/edi/198/11/81f396b3e910d3359907b7264e689052")
-
+# secchi <- target_generation_daily_secchi_m(current = 'https://docs.google.com/spreadsheets/d/1fvM0fDRliuthicQWZT7c9RYErikI5DwrzbOC7TCoMGI/edit#gid=1172894977', 
+#                                            edi = "https://pasta.lternet.edu/package/data/eml/edi/198/11/81f396b3e910d3359907b7264e689052")
+# 
 

@@ -65,6 +65,8 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
     dplyr::mutate(variable = 'ThermistorTemp_C')
+  
+  final_df$depth <- as.numeric(final_df$depth)
   ## Match data to flare targets file
   # Use pivot_longer to create a long-format table
   # for time specific - use midnight UTC values for daily

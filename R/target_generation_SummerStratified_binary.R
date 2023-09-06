@@ -1,3 +1,6 @@
+# bvr_current <- c("https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv")
+# bvr_historic <- c("https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038")
+
 target_generation_SummerStratified_binary <- function(current_file, historic_file){
   
   ## read in current data file
@@ -54,22 +57,26 @@ target_generation_SummerStratified_binary <- function(current_file, historic_fil
   
   ## extract the depths that will be used to calculate the mixing metric (1 m below surface, 1 m below bottom)
   
-  depths_use <- current_df |>
-    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
-    dplyr::summarise(top = min(depth) + 1,
-                     bottom = max(depth) - 1)
+  depths_use <- dplyr::bind_rows(historic_df, current_df)  |>
+    dplyr::mutate(depth = ifelse(depth == "surface", 0, depth)) |>
+    na.omit() |>
+    dplyr::group_by(datetime) |>
+    dplyr::summarise(top = min(as.numeric(depth)),
+                     bottom = max(as.numeric(depth))) |>
+    tidyr::pivot_longer(cols = top:bottom,
+                        values_to = 'depth')
   
   ## bind the two files using row.bind()
   final_df <- dplyr::bind_rows(historic_df, current_df) |>
-    
-    dplyr::filter(depth == depths_use$top |
-                    depth == depths_use$bottom) |>
+    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
+    dplyr::right_join(depths_use, by = c('datetime', 'depth')) |>
     dplyr::mutate(density = rLakeAnalyzer::water.density(observation)) |>
-    tidyr::pivot_wider(names_from = depth,
+    dplyr::select(-depth) |>
+    tidyr::pivot_wider(names_from = name,
                        values_from = observation:density) |>
-    dplyr::mutate(dens_diff = density_1 - density_8,
-                  temp_diff = observation_1 - observation_8,
-                  SummerStratified_binary = ifelse(abs(dens_diff) > 0.1 & #stratified
+    dplyr::mutate(density_diff = density_top - density_bottom,
+                  temp_diff = observation_top - observation_bottom,
+                  SummerStratified_binary = ifelse(abs(density_diff) > 0.1 & #stratified
                                                      temp_diff > 0, 1, 0)) |> #surface warmer than bottom
     dplyr::select(datetime, site_id, SummerStratified_binary) |>
     tidyr::pivot_longer(cols = SummerStratified_binary,
@@ -84,3 +91,5 @@ target_generation_SummerStratified_binary <- function(current_file, historic_fil
   ## return dataframe formatted to match FLARE targets
   return(final_df)
 }
+
+#a <- target_generation_SummerStratified_binary(current_file = bvr_current, historic_file = bvr_historic)
