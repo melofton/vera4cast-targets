@@ -40,7 +40,8 @@ target_IceCover_binary <- function(current_file, historic_file){
                        values_from = observation) |>
     # Ice defined as when the top is cooler than the bottom, and temp below 4 oC
     dplyr::mutate(temp_diff = top - bottom,
-                  variable = ifelse(temp_diff < 0 & top <= 4, 'IceOn', 'IceOff')) |> #surface cooler than bottom
+                  variable = ifelse(temp_diff < -0.1 & top <= 4, 'IceOn', 'IceOff')) |>
+                  #surface cooler than bottom (within error (0.1) of the sensors)
     dplyr::select(datetime, site_id, variable) |>
     tidyr::pivot_longer(cols = variable,
                         names_to = 'variable',
