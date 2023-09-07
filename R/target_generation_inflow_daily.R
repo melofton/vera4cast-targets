@@ -1,8 +1,8 @@
-# Function for generating the targets file for hourly inflow observations
+# Function for generating the targets file for DAILY inflow observations
 # Author: Adrienne Breef-Pilz
 # 24 Aug 2023
 
-generate_hourly_inflow_targets_function <- function(current_data_file, edi_data_file){
+target_generation_inflow_daily <- function(current_data_file, edi_data_file){
   
   ## read in current QAQCed data file from GitHub
   
@@ -18,7 +18,7 @@ generate_hourly_inflow_targets_function <- function(current_data_file, edi_data_
   # read in the data file downloaded from EDI
   dt2 <-read_csv(infile1) 
   
-  ## This is where the transfermation happens
+  ## This is where the transformation happens
   targets_df<-bind_rows(dt1,dt2)%>% # bind observations together
     filter(Reservoir=="FCR")%>% # select the reservoir you want. These are hard coded in right now
     filter(Site==100)%>% # select the site. Also hard coded in. There should only be one site
@@ -28,17 +28,15 @@ generate_hourly_inflow_targets_function <- function(current_data_file, edi_data_
                  values_to='observation')%>%
     # rename the observations in the variable column to get rid of the specific sensor name
     mutate(variable=ifelse(grepl('Flow', variable), "Flow_cms", ifelse(grepl('Temp', variable), "Inflow_Temp_cms", NA)))%>%
-    mutate(Date=as.Date(DateTime),  # Gets column of just the date
-           Hour = lubridate::hour(DateTime))%>% # Get columns for averaging across the hour
-    group_by(Reservoir,variable,Date, Hour)%>% # average if there are more than one sample taken during that day
+    mutate(Date=as.Date(DateTime))%>%  # Gets column of just the date
+    group_by(Reservoir,variable,Date)%>% # average if there are more than one sample taken during that day
     summarise_if(is.numeric, mean, na.rm = TRUE)%>%
     ungroup()%>%
-    mutate(datetime = ymd_hms(paste0(Date," ", Hour,":00:00")))%>%
-    #mutate(datetime=ymd_hms(paste0(Date,"","00:00:00")))%>%
+    mutate(datetime=ymd_hms(paste0(Date,"","00:00:00")))%>% # set the date to midnight for each observation
     mutate(Reservoir=ifelse(Reservoir=="FCR",'fcre',Reservoir))%>% # change the name to the the reservoir code for FLARE
-    select(-Date, -Hour)%>%
+    select(-Date)%>%
     rename(site_id=Reservoir)%>% # rename the columns for standard notation)
-      mutate(depth=NA)%>% # right now there are no depth readings with these but can add one
+    mutate(depth=NA)%>% # right now there are no depth readings with these but can add one
     select(c('datetime', 'site_id', 'depth', "observation", 'variable')) # rearrange order of columns
   
   
@@ -48,7 +46,7 @@ generate_hourly_inflow_targets_function <- function(current_data_file, edi_data_
 }
 
 # Using the function with the EDI address for data
-# generate_hourly_inflow_targets_function(
+# a <- target_generation_inflow_daily(
 #  current_data_file="https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-weir-data-qaqc/FCRWeir_L1.csv",
 #  edi_data_file="https://pasta.lternet.edu/package/data/eml/edi/202/10/c065ff822e73c747f378efe47f5af12b")
 

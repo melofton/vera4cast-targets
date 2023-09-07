@@ -15,7 +15,8 @@ library(tibble)
 target_generation_daily_secchi_m <- function(current, edi){
   #read in the google sheet for secchi
   #this does not read in in UTC
-  secchi_current <- read_sheet(current)
+  #secchi_current <- read_sheet(current)
+  secchi_current <- gsheet::gsheet2tbl(current)
   
 #subset to only one spot in the reservoir (deep hole)
   secchi_current_1 <- secchi_current %>% subset(Site=="50") 
@@ -44,6 +45,7 @@ target_generation_daily_secchi_m <- function(current, edi){
   #secchi doesn't have an associated depth, Secchi_m is an observation, need to create a depth column
   #need to create a variable column: add a column with every row = secchi_m
   secchi_current_2 <- secchi_current_1 %>% subset(select = c("DateTime", "Reservoir", "Secchi_m"))
+  secchi_current_2$DateTime <- as.POSIXct(secchi_current_2$DateTime)
   
   ## bind the two files using bind_rows()
   comb_secchi <- bind_rows(secchi_edi, secchi_current_2)
@@ -86,7 +88,7 @@ target_generation_daily_secchi_m <- function(current, edi){
   return(comb_secchi_5)
 }
 
-secchi <- target_generation_daily_secchi_m(current = 'https://docs.google.com/spreadsheets/d/1fvM0fDRliuthicQWZT7c9RYErikI5DwrzbOC7TCoMGI/edit#gid=1172894977', 
-                                           edi = "https://pasta.lternet.edu/package/data/eml/edi/198/11/81f396b3e910d3359907b7264e689052")
+# secchi <- target_generation_daily_secchi_m(current = 'https://docs.google.com/spreadsheets/d/1fvM0fDRliuthicQWZT7c9RYErikI5DwrzbOC7TCoMGI/edit#gid=1172894977',
+#                                            edi = "https://pasta.lternet.edu/package/data/eml/edi/198/11/81f396b3e910d3359907b7264e689052")
 
 

@@ -15,13 +15,14 @@ library(tidyverse)
 
 #fcr_files <- c("https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f",
 #               "https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv")
+# bvr_files <- c("https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv", 
+#                "https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038")
 #bvr_current <- c("https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv")
 #bvr_2020_2022 <- c("https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038")
 #bvr_2016_2020 <- readr::read_csv("https://pasta.lternet.edu/package/data/eml/edi/725/3/38965aab7e21bf7a6157ba4d199c5e2c")
 
 target_generation_waterlevel_hourly <- function (fcr_files, 
-                                   bvr_current, 
-                                   bvr_2020_2022) {
+                                                 bvr_files) {
   
   # Load FCR data
   fcr_df <- readr::read_csv(fcr_files) |> 
@@ -32,12 +33,12 @@ target_generation_waterlevel_hourly <- function (fcr_files,
                   Hour = lubridate::hour(DateTime))
   
   # Load BVR data
-  bvr_df <- dplyr::bind_rows(bvr_current, bvr_2020_2022) |> 
-    dplyr::mutate(site_id = "bvre",
+  fcr_df <- readr::read_csv(bvr_files) |> 
+    dplyr::mutate(site_id = "fcre",
                   DateTime = lubridate::force_tz(DateTime, tzone = "EST"),
                   DateTime = lubridate::with_tz(DateTime, tzone = "UTC"),
                   Date = as.Date(DateTime),
-                  Hour = lubridate::hour(DateTime)) 
+                  Hour = lubridate::hour(DateTime))
   
   # Format data to combine
   # FCR
