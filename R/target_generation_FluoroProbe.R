@@ -23,88 +23,14 @@ library(lubridate)
 library(httr)
 
 #historic_data <- "https://portal.edirepository.org/nis/dataviewer?packageid=edi.272.7&entityid=001cb516ad3e8cbabe1fdcf6826a0a45"
-target_generation_FluoroProbe <- function(EDI_file){
+#current_file <-'./Data/DataNotYetUploadedToEDI/Raw_fluoroprobe/fluoroprobe_L1.csv'  
+
+target_generation_FluoroProbe <- function(current_file, historic_file){
   
-  ## read in current data file 
-  # Github, Googlesheet, etc. 
-  req <- GET("https://api.github.com/repos/CareyLabVT/Reservoirs/git/trees/master?recursive=1")
-  stop_for_status(req)
-  filelist <- unlist(lapply(content(req)$tree, "[", "path"), use.names = F)
-  vec1 <- grep("Data/DataNotYetUploadedToEDI/Raw_fluoroprobe", filelist, value = TRUE, fixed = TRUE)
-  vec2 <- grep(".txt", vec1, value = TRUE, fixed = TRUE)
-  
-  # Load in column names for .txt files to get template
-  df <- read_tsv(paste0("https://raw.githubusercontent.com/CareyLabVT/Reservoirs/master/",vec2[1]), n_max = 0) %>%
-    mutate(cast = character(length = 0L))
-  
-  # Load in all txt files
-  casts1 <- sapply(vec2, function(x) strsplit(x, "/"), USE.NAMES=FALSE)
-  casts2 <- sapply(casts1, `[`, 4)
-  
-  for(i in 1:length(vec2)){
-    fp_file <- read_tsv(paste0("https://raw.githubusercontent.com/CareyLabVT/Reservoirs/master/",vec2[i])) %>%
-      mutate(cast = casts2[i]) %>%
-      slice(-1)
-    
-    df <- bind_rows(df, fp_file)
-    
-  }
+  new_data <- read_csv(current_file)
   
   # read in historical data file 
-  needed_cols <- c("Reservoir"       ,     "Site"            ,     "DateTime"  ,          
-                   "GreenAlgae_ugL"   ,    "Bluegreens_ugL"   ,    "BrownAlgae_ugL"   ,   
-                   "MixedAlgae_ugL"    ,   "TotalConc_ugL"     ,  
-                    "Depth_m"            )
-  
-  edi <- readr::read_csv(EDI_file) %>%
-    select(any_of(needed_cols))
-  
-  ## manipulate the data files to match each other 
-  
-  #split out column containing filename to get Reservoir and Site data
-  df2 <- df %>%
-    rowwise() %>% 
-    mutate(Reservoir = unlist(strsplit(cast, split='_', fixed=TRUE))[2],
-           Site = unlist(strsplit(cast, split='_', fixed=TRUE))[3],
-           Site = as.numeric(unlist(strsplit(Site, split='.', fixed=TRUE))[1])) %>%
-    ungroup() %>%
-    rename(DateTime = `Date/Time`, GreenAlgae_ugL = `Green Algae...2`,Bluegreens_ugL = `Bluegreen...3`,
-           BrownAlgae_ugL = `Diatoms...4`, MixedAlgae_ugL = `Cryptophyta...5`, YellowSubstances_ugL = `Yellow substances...9`,
-           TotalConc_ugL = `Total conc.`, Transmission = `Transmission`, Depth_m = `Depth`, Temp_degC = `Temp. Sample`,
-           RFU_525nm = `LED 3 [525 nm]`, RFU_570nm = `LED 4 [570 nm]`, RFU_610nm = `LED 5 [610 nm]`,
-           RFU_370nm = `LED 6 [370 nm]`, RFU_590nm = `LED 7 [590 nm]`, RFU_470nm = `LED 8 [470 nm]`,
-           Pressure_unit = `Pressure`) %>%
-    select(cast, Reservoir, Site, DateTime, GreenAlgae_ugL, Bluegreens_ugL, BrownAlgae_ugL, MixedAlgae_ugL, YellowSubstances_ugL,
-           TotalConc_ugL, Transmission, Depth_m, Temp_degC, RFU_525nm, RFU_570nm, RFU_610nm,
-           RFU_370nm, RFU_590nm, RFU_470nm) %>%
-  # Rename and select useful columns; drop metrics we don't use or publish such as cell count;
-  # eliminate shallow depths because of quenching
-    mutate(across(!DateTime & !cast & !Reservoir & !Site, as.numeric)) %>%
-    mutate(DateTime = as.POSIXct(as_datetime(DateTime, tz = "", format = "%m/%d/%Y %I:%M:%S %p"))) %>%
-    filter(Depth_m >= 0.2) %>%
-    dplyr::mutate(DateTime = lubridate::force_tz(DateTime, tzone = "EST"),
-    DateTime = lubridate::with_tz(DateTime, tzone = "UTC"))
-  
-  #trim casts to eliminate poor readings due to sediment interference at bottom of reservoir
-  #for our purposes, we consider the "max depth" of each reservoir to be:
-  #FCR = 9.5 m; BVR = 10.0 m; CCR = 21 m 
-  
-  df3 = df2[FALSE,]
-  
-  for (i in 1:length(unique(df2$cast))){
-    profile = subset(df2, cast == unique(df2$cast)[i])
-    if(profile$Reservoir[1] == "FCR"){
-      profile_trim <- profile %>% filter(Depth_m <= 9.5)
-    } else if (profile$Reservoir[1] == "CCR"){
-      profile_trim <- profile %>% filter(Depth_m <= 21)
-    } else if (profile$Reservoir[1] == "BVR"){
-      profile_trim <- profile %>% filter(Depth_m <= 10)
-    }
-    df3 <- bind_rows(df3, profile_trim)
-  } 
-  
-  df4 <- df3 %>%
-    select(any_of(colnames(edi)))
+  edi <- readr::read_csv(historic_file)
   
   # additional code added by austin to qaqc edi depths
   edi_fcr_trim <- edi |> filter(Reservoir == 'FCR', Depth_m <= 9.5)
@@ -114,12 +40,17 @@ target_generation_FluoroProbe <- function(EDI_file){
   edi_update <- dplyr::bind_rows(edi_fcr_trim, edi_bvr_trim, edi_ccr_trim)
   
   
+  needed_cols <- c("Reservoir"       ,     "Site"            ,     "DateTime"  ,          
+                   "GreenAlgae_ugL"   ,    "Bluegreens_ugL"   ,    "BrownAlgae_ugL"   ,   
+                   "MixedAlgae_ugL"    ,   "TotalConc_ugL"     ,  
+                   "Depth_m"            )
   
   ## bind the two files using bind_rows()
-  # need to double-check that columnns match
-  fp <- bind_rows(edi_update, df4) %>%
+  # need to double-check that columns match
+  fp <- bind_rows(edi_update, new_data) %>%
     filter(Reservoir %in% c("FCR","BVR") & Site == 50) %>%
-    arrange(Reservoir, DateTime, Depth_m)
+    arrange(Reservoir, DateTime, Depth_m) |> 
+    select(any_of(needed_cols))
   
   biomass_exo <- fp %>%
     mutate(Date = date(DateTime)) %>%
@@ -179,8 +110,3 @@ target_generation_FluoroProbe <- function(EDI_file){
  return(final)
   
 }
-
-
-#a <- target_generation_FluoroProbe(EDI_file = historic_data)
-
-
