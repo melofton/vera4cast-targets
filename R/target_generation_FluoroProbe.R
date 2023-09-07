@@ -22,8 +22,8 @@ library(tidyverse)
 library(lubridate)
 library(httr)
 
-
-target_generation_FluoroProbe <- function(EDI_file = "https://portal.edirepository.org/nis/dataviewer?packageid=edi.272.7&entityid=001cb516ad3e8cbabe1fdcf6826a0a45"){
+#historic_data <- "https://portal.edirepository.org/nis/dataviewer?packageid=edi.272.7&entityid=001cb516ad3e8cbabe1fdcf6826a0a45"
+target_generation_FluoroProbe <- function(EDI_file){
   
   ## read in current data file 
   # Github, Googlesheet, etc. 
@@ -100,15 +100,24 @@ target_generation_FluoroProbe <- function(EDI_file = "https://portal.edireposito
     } else if (profile$Reservoir[1] == "BVR"){
       profile_trim <- profile %>% filter(Depth_m <= 10)
     }
-    df3 <- bind_rows(df2, profile_trim)
+    df3 <- bind_rows(df3, profile_trim)
   } 
   
   df4 <- df3 %>%
     select(any_of(colnames(edi)))
   
+  # additional code added by austin to qaqc edi depths
+  edi_fcr_trim <- edi |> filter(Reservoir == 'FCR', Depth_m <= 9.5)
+  edi_bvr_trim <- edi |> filter(Reservoir == 'BVR', Depth_m <= 10)
+  edi_ccr_trim <- edi |> filter(Reservoir == 'CCR', Depth_m <= 21)
+  
+  edi_update <- dplyr::bind_rows(edi_fcr_trim, edi_bvr_trim, edi_ccr_trim)
+  
+  
+  
   ## bind the two files using bind_rows()
   # need to double-check that columnns match
-  fp <- bind_rows(edi, df4) %>%
+  fp <- bind_rows(edi_update, df4) %>%
     filter(Reservoir %in% c("FCR","BVR") & Site == 50) %>%
     arrange(Reservoir, DateTime, Depth_m)
   
@@ -172,5 +181,6 @@ target_generation_FluoroProbe <- function(EDI_file = "https://portal.edireposito
 }
 
 
+#a <- target_generation_FluoroProbe(EDI_file = historic_data)
 
 

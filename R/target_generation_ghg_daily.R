@@ -2,7 +2,7 @@
 # Author: Adrienne Breef-Pilz
 # 24 Aug 2023
 
-generate_ghg_targets_function <- function(current_data_file, edi_data_file){
+target_generation_ghg_targets <- function(current_data_file, edi_data_file){
   
   ## read in current data file 
   # ABP work on creating a perliminary GHG file for the current data 
@@ -48,7 +48,7 @@ generate_ghg_targets_function <- function(current_data_file, edi_data_file){
 }
 
 # Using the function with the EDI address for data
-# generate_ghg_targets_function(
+# target_generation_ghg_targets(
 #  current_data_file=NULL,
 #  edi_data_file= "https://pasta.lternet.edu/package/data/eml/edi/551/7/38d72673295864956cccd6bbba99a1a3")
 
