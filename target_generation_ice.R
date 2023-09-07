@@ -23,7 +23,7 @@ target_IceCover_binary <- function(current_file, historic_file){
 
   # the depths used to assess will change depending on the current depth of FCR
   depths_use <- current_df |>
-    dplyr::mutate(depth = ifelse(depth == "surface", 0, depth)) |>
+    dplyr::mutate(depth = ifelse(depth == "surface", 0.1, depth)) |>
     na.omit() |>
     dplyr::group_by(datetime) |>
     dplyr::summarise(top = min(as.numeric(depth)),
@@ -33,7 +33,7 @@ target_IceCover_binary <- function(current_file, historic_file){
 
 
   current_on_off <- current_df |>
-    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0, depth))) |>
+    dplyr::mutate(depth = as.numeric(ifelse(depth == "surface", 0.1, depth))) |>
     dplyr::right_join(depths_use, by = c('datetime', 'depth')) |>
     dplyr::select(-depth) |>
     tidyr::pivot_wider(names_from = name,
