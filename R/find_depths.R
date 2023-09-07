@@ -36,8 +36,11 @@ find_depths <- function(data_file, # data_file = the file of most recent data ei
   # and were re-secured about a meter a part from each other. Because of this we need to filter before 2021-04-05 13:20:00 EST
   # and after. The top two thermistors exact offset will have to be determined again when the water level is high enough again.
 
-  cuts <- tibble::tibble(cuts = as.integer(factor(seq(0,max(long$Depth_m, na.rm = T), 0.25))),
-                         depth_bin = seq(0,max(long$Depth_m, na.rm = T), 0.25))
+  cuts <- tibble::tibble(cuts = as.integer(factor(seq(0, 
+                                                      ceiling(max(long$Depth_m, na.rm = T)),
+                                                      0.25))),
+                         depth_bin = seq(0,
+                                         ceiling(max(long$Depth_m, na.rm = T)), 0.25))
 
   # If the sensors string was never moved then Date_offset is NULL
   if (is.null(date_offset)){
@@ -76,7 +79,7 @@ find_depths <- function(data_file, # data_file = the file of most recent data ei
       dplyr::mutate(rounded_depth = round(sensor_depth, round_digits),
                     cuts = cut(sensor_depth,
                                breaks = cuts$depth_bin,
-                               include.lowest = T, right = F, labels = F)) |>
+                               include.lowest = T, right = F, labels = F, )) |>
       dplyr::left_join(cuts, by = 'cuts')
     # Round the digit specified in the function
 
