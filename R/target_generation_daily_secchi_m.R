@@ -13,13 +13,8 @@ library(tibble)
 
 
 target_generation_daily_secchi_m <- function(current, edi){
-  #read in the google sheet for secchi
-  #this does not read in in UTC
-  #secchi_current <- read_sheet(current)
-  secchi_current <- gsheet::gsheet2tbl(current)
-  
-#subset to only one spot in the reservoir (deep hole)
-  secchi_current_1 <- secchi_current %>% subset(Site=="50") 
+  # read in current file from github 
+  secchi_current_1 <- read_csv(current)
   
   #read in the EDI data
   inUrl1  <- edi 
@@ -57,10 +52,10 @@ target_generation_daily_secchi_m <- function(current, edi){
   
   #change colnames to lowercase, add columns, rename and reorder columns to match scheme
   comb_secchi_1 <- comb_secchi %>% 
-    clean_names %>% 
-    rename("site_id" = "reservoir")%>% 
-    rename("datetime" = "date_time")%>% 
-    rename("observation" = "secchi_m") %>% 
+   #clean_names %>% 
+    rename("site_id" = "Reservoir")%>% 
+    rename("datetime" = "DateTime")%>% 
+    rename("observation" = "Secchi_m") %>% 
     add_column(variable = "secchi_m") %>% 
     add_column(depth = NA) %>% 
     subset(select = c('datetime', 'site_id', 'depth', "observation", 'variable'))
@@ -88,7 +83,8 @@ target_generation_daily_secchi_m <- function(current, edi){
   return(comb_secchi_5)
 }
 
-# secchi <- target_generation_daily_secchi_m(current = 'https://docs.google.com/spreadsheets/d/1fvM0fDRliuthicQWZT7c9RYErikI5DwrzbOC7TCoMGI/edit#gid=1172894977',
+#google_doc = 'https://docs.google.com/spreadsheets/d/1fvM0fDRliuthicQWZT7c9RYErikI5DwrzbOC7TCoMGI/edit#gid=1172894977'
+# secchi <- target_generation_daily_secchi_m(current = "https://raw.githubusercontent.com/addelany/Reservoirs/master/Data/DataNotYetUploadedToEDI/Secchi/secchi_L1.csv",
 #                                            edi = "https://pasta.lternet.edu/package/data/eml/edi/198/11/81f396b3e910d3359907b7264e689052")
 
 
