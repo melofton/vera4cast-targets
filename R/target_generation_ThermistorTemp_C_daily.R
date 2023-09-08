@@ -1,3 +1,6 @@
+latest <- "https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv"
+edi <- "https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f"
+
 target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file){
   source('R/find_depths.R')
   ## read in current data file
@@ -147,3 +150,5 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
   ## return dataframe formatted to match FLARE targets
   return(final_df)
 }
+
+a <- target_generation_ThermistorTemp_C_daily(current_file = latest, historic_file = edi)
