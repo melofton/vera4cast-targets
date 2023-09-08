@@ -92,7 +92,8 @@ find_depths <- function(data_file, # data_file = the file of most recent data ei
 
   # only select the columns you want
   final_depths <- long_depth |>
-    dplyr::select(Reservoir, Site,
+    dplyr::mutate(Depth_m = round(Depth_m, round_digits)) |> 
+    dplyr::select(Reservoir, Site, Depth_m,
                   DateTime, variable,
                   Position, sensor_depth,
                   rounded_depth,
