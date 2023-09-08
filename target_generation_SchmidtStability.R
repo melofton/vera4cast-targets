@@ -30,7 +30,7 @@ generate_schmidt.stability <- function(current_file, historic_file) {
                     Position = as.numeric(Position)) |>
       na.omit() |>
       dplyr::left_join(bvr_depths,
-                       by = c('Position', 'date', 'Reservoir', 'variable')) |>
+                       by = c('Position', 'date', 'Reservoir', 'variable'), multiple = 'all') |>
       dplyr::group_by(date, Reservoir, depth) |>
       dplyr::summarise(observation = mean(observation, na.rm = T),
                        n = dplyr::n(),
@@ -97,7 +97,7 @@ generate_schmidt.stability <- function(current_file, historic_file) {
                     Position = as.numeric(Position)) |>
       na.omit() |>
       dplyr::left_join(bvr_depths,
-                       by = c('Position', 'date', 'Reservoir', 'variable')) |>
+                       by = c('Position', 'date', 'Reservoir', 'variable'), multiple = 'all') |>
       dplyr::group_by(date, Reservoir, depth) |>
       dplyr::summarise(observation = mean(observation, na.rm = T),
                        n = dplyr::n(),
@@ -151,7 +151,7 @@ generate_schmidt.stability <- function(current_file, historic_file) {
     #Create a dataframe with bathymetry at each date
     flexible_bathy <- final_df |> # takes the depth at each day
       dplyr::distinct(date, WaterLevel, Reservoir) |> 
-      dplyr::full_join(bathymetry, multiple = 'all') |>
+      dplyr::full_join(bathymetry, multiple = 'all', by = 'Reservoir') |>
       dplyr::group_by(date) |>
       dplyr::mutate(Depth_m = Depth_m - (max(Depth_m) - mean(unique(WaterLevel))),
                     WaterLevel = mean(WaterLevel)) |>
