@@ -2,7 +2,7 @@
 # Author: Adrienne Breef-Pilz
 # 17 Aug 2023
 
-generate_chemistry_targets_function <- function(current_data_file, edi_data_file){
+target_generation_chemistry_daily <- function(current_data_file, historic_data_file){
   
   ## read in current data file 
   # Right now there is no current Chemistry file to read in 
@@ -10,7 +10,7 @@ generate_chemistry_targets_function <- function(current_data_file, edi_data_file
   
   # read in historical data file 
   # EDI
-  inUrl1 <- edi_data_file
+  inUrl1 <- historic_data_file
   infile1 <- tempfile()
   try(download.file(inUrl1,infile1,method="curl"))
   if (is.na(file.size(infile1))) download.file(inUrl1,infile1,method="auto")
@@ -57,7 +57,7 @@ generate_chemistry_targets_function <- function(current_data_file, edi_data_file
 }
 
 # Using the function with the EDI address for data
-# generate_chemistry_targets_function(
+# target_generation_chemistry_daily(
 #  current_data_file=NULL, 
-#  edi_data_file="https://pasta.lternet.edu/package/data/eml/edi/199/11/509f39850b6f95628d10889d66885b76") 
+#  historic_data_file="https://pasta.lternet.edu/package/data/eml/edi/199/11/509f39850b6f95628d10889d66885b76") 
 
