@@ -1,3 +1,14 @@
+## FO
+
+# fcr_files <- c("https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f",
+#                "https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv")
+
+#latest <- "https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-catwalk-data-qaqc/fcre-waterquality_L1.csv"
+#edi <- "https://pasta.lternet.edu/package/data/eml/edi/271/7/71e6b946b751aa1b966ab5653b01077f"
+
+# bvr_files <- c("https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data-qaqc/bvre-waterquality_L1.csv",
+#                "https://pasta.lternet.edu/package/data/eml/edi/725/3/a9a7ff6fe8dc20f7a8f89447d4dc2038")
+
 generate_schmidt.stability <- function(current_file, historic_file) {
   
   source('R/find_depths.R')
@@ -193,8 +204,12 @@ generate_schmidt.stability <- function(current_file, historic_file) {
   }
   
   final_ss <- data.frame(datetime = unique(final_df$date), 
+                         site_id = current_df$Reservoir[1],
+                         depth = NA,
                          observation = schmidts,
                          variable = 'schmidt.stability')
   ## Match data to flare targets file
   return(final_ss)
 }
+
+#a <- generate_schmidt.stability(current_file = latest, historic_file = edi)

@@ -1,0 +1,30 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+
+name: target-generation
+
+jobs:
+  targets:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    container: rocker/geospatial:latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install
+        shell: Rscript {0}
+        run: |
+          remotes::install_github("cboettig/aws.s3")
+
+      - name: Generate targets
+        shell: Rscript {0}
+        run: |
+          source("targets/exo_targets.R")
