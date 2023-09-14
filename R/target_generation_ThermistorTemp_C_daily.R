@@ -151,4 +151,4 @@ target_generation_ThermistorTemp_C_daily <- function(current_file, historic_file
   return(final_df)
 }
 
-a <- target_generation_ThermistorTemp_C_daily(current_file = latest, historic_file = edi)
+#a <- target_generation_ThermistorTemp_C_daily(current_file = latest, historic_file = edi)
