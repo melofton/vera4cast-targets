@@ -14,4 +14,4 @@ s3 <- arrow::s3_bucket("bio230121-bucket01", endpoint_override = "renc.osn.xsede
 s3$CreateDir("vera4cast/targets/daily")
 
 s3 <- arrow::s3_bucket("bio230121-bucket01/vera4cast/targets/daily", endpoint_override = "renc.osn.xsede.org")
-arrow::write_csv_arrow(exo_daily, sink = s3$path("exo_daily-targets.csv.gz"))
+arrow::write_csv_arrow(exo_daily, sink = s3$path("daily-targets.csv.gz"))
