@@ -14,11 +14,11 @@ library(cowplot)
 #'@param data data frame with columns datetime, site_id, depth_m, observation, variable
 #'@param cal_dates list of two dates (yyyy-mm-dd) for start and
 #'stop of calibration/fit period
+#'@param plot_file filepath to where you want plot output written
 #'
-#'ideal output here?
-#'would be something like....
-#'for each variable, side-by-side plots of the fitted GAM for interpolated
-#'and not interpolated, with interpolated points a different color
+#'Output:
+#'for each variable, side-by-side plots of the fitted GAM for interpolated-to-daily
+#'and not interpolated data, with interpolated points a different color
 
 fit_DOY_FP <- function(data, cal_dates, plot_file){
   
@@ -32,8 +32,10 @@ fit_DOY_FP <- function(data, cal_dates, plot_file){
     filter(Date >= start_cal & Date <= stop_cal) %>%
     mutate(doy = yday(Date)) 
   
+  #get vector of variables
   vars <- unique(df$variable)
   
+  #loop thru variables
   for(i in 1:length(vars)){
     
     #subset data
@@ -41,7 +43,7 @@ fit_DOY_FP <- function(data, cal_dates, plot_file){
       filter(variable == vars[i]) %>%
       select(Date, doy, observation)
     
-    #create data frame or interpolation
+    #create data frame for interpolation and interpolate
     daily_dates <- tibble(seq.Date(from = as.Date(start_cal), to = as.Date(stop_cal), by = "day"))
     colnames(daily_dates) <- "Date"
     interp_df <- left_join(daily_dates, sub) %>%
@@ -59,13 +61,13 @@ fit_DOY_FP <- function(data, cal_dates, plot_file){
     my.gam <- mgcv::gam(formula = y ~ s(x, bs = "cs"), family = gaussian(),
                         data = interp_df, method = "REML")
     
+    #get GAM predictions
     GAM_predicted <- mgcv::predict.gam(my.gam, data.frame(x=sub$x))
     GAM_predicted_interp <- mgcv::predict.gam(my.gam, data.frame(x=interp_df$x))
-    
-    
     sub$pred <- GAM_predicted
     interp_df$pred <- GAM_predicted_interp
     
+    #plot GAM predictions and data
     GAM_plot <- ggplot()+
       xlab("DOY")+
       ylab(vars[i])+
@@ -88,6 +90,7 @@ fit_DOY_FP <- function(data, cal_dates, plot_file){
       ggtitle(paste0(vars[i],": Interpolated"))
     #GAM_plot_interp
     
+    #combine plots and write to file
     p <- plot_grid(GAM_plot, GAM_plot_interp)
     ggsave(p, filename = paste0(plot_file,vars[i],".png"),
            device = "png", height = 3, width = 10, units = "in")
