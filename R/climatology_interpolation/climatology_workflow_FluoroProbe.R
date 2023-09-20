@@ -24,3 +24,11 @@ current_file <- "/Users/MaryLofton/RProjects/Reservoirs/Data/DataNotYetUploadedT
 
 # generate targets
 targets <- target_generation_FluoroProbe(current_file = current_file, historic_file = historic_data)
+
+# define arguments for DOY model function
+data <- targets
+cal_dates <- c(date(data$datetime[1]),date(last(data$datetime)))
+plot_file <- "/Users/MaryLofton/Desktop/interp_plots/"
+
+# fit DOY models with and without interpolated data
+fit_DOY_FP(data = data, cal_dates = cal_dates, plot_file = plot_file)

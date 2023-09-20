@@ -4,7 +4,11 @@
 
 #Purpose: fit DOY model for FluoroProbe from 2014-present
 
+library(tidyverse)
+library(lubridate)
 library(mgcv)
+library(zoo)
+library(cowplot)
 
 #'Function to fit day of year model for chla
 #'@param data data frame with columns datetime, site_id, depth_m, observation, variable
@@ -16,10 +20,7 @@ library(mgcv)
 #'for each variable, side-by-side plots of the fitted GAM for interpolated
 #'and not interpolated, with interpolated points a different color
 
-data <- targets
-cal_dates <- c(date(data$datetime[1]),date(last(data$datetime)))
-
-fit_DOY_chla <- function(data, cal_dates){
+fit_DOY_FP <- function(data, cal_dates, plot_file){
   
   #assign model fit start and stop dates
   start_cal <- date(cal_dates[1])
@@ -34,19 +35,36 @@ fit_DOY_chla <- function(data, cal_dates){
   vars <- unique(df$variable)
   
   for(i in 1:length(vars)){
+    
+    #subset data
     sub <- df %>%
       filter(variable == vars[i]) %>%
       select(Date, doy, observation)
     
+    #create data frame or interpolation
+    daily_dates <- tibble(seq.Date(from = as.Date(start_cal), to = as.Date(stop_cal), by = "day"))
+    colnames(daily_dates) <- "Date"
+    interp_df <- left_join(daily_dates, sub) %>%
+      mutate(doy = yday(Date),
+             interp_flag = ifelse(is.na(observation),"interpolated","obs"),
+             observation = na.approx(observation))
+    
+    #format for GAM
     colnames(sub) <- c("Date","x","y")
+    colnames(interp_df) <- c("Date","x","y","interp_flag")
     
     #fit GAM following methods in ggplot()
     my.gam <- mgcv::gam(formula = y ~ s(x, bs = "cs"), family = gaussian(),
                         data = sub, method = "REML")
+    my.gam <- mgcv::gam(formula = y ~ s(x, bs = "cs"), family = gaussian(),
+                        data = interp_df, method = "REML")
     
     GAM_predicted <- mgcv::predict.gam(my.gam, data.frame(x=sub$x))
+    GAM_predicted_interp <- mgcv::predict.gam(my.gam, data.frame(x=interp_df$x))
+    
     
     sub$pred <- GAM_predicted
+    interp_df$pred <- GAM_predicted_interp
     
     GAM_plot <- ggplot()+
       xlab("DOY")+
@@ -54,26 +72,26 @@ fit_DOY_chla <- function(data, cal_dates){
       geom_point(data = sub, aes(x = x, y = y, fill = "obs"))+
       geom_line(data = sub, aes(x = x, y = pred, color = "DOY model"), linewidth = 1)+
       theme_classic()+
-      labs(color = NULL, fill = NULL)
-    GAM_plot
+      scale_color_manual(values = c("obs" = "black","DOY model" = "blue"))+
+      labs(color = NULL, fill = NULL)+
+      ggtitle(paste0(vars[i],": Observed only"))
+    #GAM_plot
     
-    # next, need to get df with linear interpolation between all obs and
-    # fit GAM and see how it does, maybe write cowplot with both side by side
-    # for each variable
+    GAM_plot_interp <- ggplot()+
+      xlab("DOY")+
+      ylab(vars[i])+
+      geom_point(data = interp_df, aes(x = x, y = y, color = interp_flag))+
+      geom_line(data = interp_df, aes(x = x, y = pred, color = "DOY model"), linewidth = 1)+
+      theme_classic()+
+      scale_color_manual(values = c("obs" = "black","interpolated" = "gray","DOY model" = "blue"))+
+      labs(color = NULL, fill = NULL)+
+      ggtitle(paste0(vars[i],": Interpolated"))
+    #GAM_plot_interp
+    
+    p <- plot_grid(GAM_plot, GAM_plot_interp)
+    ggsave(p, filename = paste0(plot_file,vars[i],".png"),
+           device = "png", height = 3, width = 10, units = "in")
     
   }
   
-  #get list of calibration dates
-  dates <- data %>%
-    filter(Date >= start_cal & Date <= stop_cal)
-  
-  #build output df
-  df.out <- data.frame(model_id = "DOY",
-                       datetime = dates$Date,
-                       variable = "chlorophyll-a",
-                       prediction = GAM_predicted)
-  
-  
-  #return output + model with best fit + plot
-  return(list(out = df.out, DOY = my.gam, plot = GAM_plot))
 }
