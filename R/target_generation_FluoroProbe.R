@@ -27,12 +27,16 @@ library(httr)
 
 target_generation_FluoroProbe <- function(current_file, historic_file){
   
+  # read in current file
+  message("Reading in unpublished data")
   new_data <- read_csv(current_file)
   
   # read in historical data file 
+  message("Reading in published data")
   edi <- readr::read_csv(historic_file)
   
   # additional code added by austin to qaqc edi depths
+  message("Data wrangling...")
   edi_fcr_trim <- edi |> filter(Reservoir == 'FCR', Depth_m <= 9.5)
   edi_bvr_trim <- edi |> filter(Reservoir == 'BVR', Depth_m <= 10)
   edi_ccr_trim <- edi |> filter(Reservoir == 'CCR', Depth_m <= 21)
