@@ -58,12 +58,12 @@ fit_DOY_FP <- function(data, cal_dates, plot_file){
     #fit GAM following methods in ggplot()
     my.gam <- mgcv::gam(formula = y ~ s(x, bs = "cs"), family = gaussian(),
                         data = sub, method = "REML")
-    my.gam <- mgcv::gam(formula = y ~ s(x, bs = "cs"), family = gaussian(),
+    my.gam1 <- mgcv::gam(formula = y ~ s(x, bs = "cs"), family = gaussian(),
                         data = interp_df, method = "REML")
     
     #get GAM predictions
     GAM_predicted <- mgcv::predict.gam(my.gam, data.frame(x=sub$x))
-    GAM_predicted_interp <- mgcv::predict.gam(my.gam, data.frame(x=interp_df$x))
+    GAM_predicted_interp <- mgcv::predict.gam(my.gam1, data.frame(x=interp_df$x))
     sub$pred <- GAM_predicted
     interp_df$pred <- GAM_predicted_interp
     
