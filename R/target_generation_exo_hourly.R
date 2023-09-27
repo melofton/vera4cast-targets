@@ -81,7 +81,7 @@ target_generation_exo_hourly <- function (fcr_files,
   comb_sum <- comb_sum |> 
     tidyr::pivot_longer(cols = Temp_C:Bloom_binary, names_to = "variable", values_to = "observation") |> 
     dplyr::mutate(depth_m = ifelse(site_id == "fcre", 1.6, NA),
-                  depth_m = ifelse(site_id == "bvre", 1.5, NA)) |> 
+                  depth_m = ifelse(site_id == "bvre", 1.5, depth_m)) |> 
     #dplyr::rename(depth_m = EXODepth_m) |> 
     dplyr::select(datetime, site_id, depth_m, observation, variable) |> 
     dplyr::mutate(observation = ifelse(!is.finite(observation),NA,observation))
