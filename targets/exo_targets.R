@@ -10,6 +10,9 @@ bvr_files <- c("https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-
 
 exo_daily <- target_generation_exo_daily(fcr_files, bvr_files)
 
+#Add in a depth column
+exo_daily <- exo_daily |> mutate(depth = NA)
+
 s3 <- arrow::s3_bucket("bio230121-bucket01", endpoint_override = "renc.osn.xsede.org")
 s3$CreateDir("vera4cast/targets/daily")
 
