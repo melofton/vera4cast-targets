@@ -19,5 +19,5 @@ exo_daily <- exo_daily |>
 s3 <- arrow::s3_bucket("bio230121-bucket01", endpoint_override = "renc.osn.xsede.org")
 s3$CreateDir("vera4cast/targets/duration=P1D")
 
-s3 <- arrow::s3_bucket("bio230121-bucket01/vera4cast/targets/daily", endpoint_override = "renc.osn.xsede.org")
-arrow::write_csv_arrow(exo_daily, sink = s3$path("daily-targets.csv.gz"))
+s3 <- arrow::s3_bucket("bio230121-bucket01/vera4cast/targets/duration=P1D", endpoint_override = "renc.osn.xsede.org")
+arrow::write_csv_arrow(exo_daily, sink = s3$path("P1D-targets.csv.gz"))
