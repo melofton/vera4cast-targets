@@ -14,7 +14,8 @@ exo_daily <- target_generation_exo_daily(fcr_files, bvr_files)
 exo_daily <- exo_daily |> 
   mutate(depth = NA,
          duration = "P1D",
-         datetime = lubridate::as_datetime(datetime))
+         datetime = lubridate::as_datetime(datetime),
+        project_id = "vera4cast")
 
 s3 <- arrow::s3_bucket("bio230121-bucket01", endpoint_override = "renc.osn.xsede.org")
 s3$CreateDir("vera4cast/targets/daily")
