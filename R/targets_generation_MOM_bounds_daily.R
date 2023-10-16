@@ -1,6 +1,6 @@
-#calculates MOM_binary 
-#MOM is calculated as the layer where DO is < 2mg/L (for now)
-#17Aug2023 HLW
+#calculates MOM upper and lower bounds
+#note that may want to set MOM bounds to 0 when MOM binary = 0 (need to link the two scripts?)
+#16Oct2023 HLW
 
 if (!require("pacman"))install.packages("pacman")
 pacman::p_load(utils, tidyverse)
@@ -34,30 +34,35 @@ targets_generation_daily_MOM <- function(current_file, historic_file){
   
   #change names so df matches targets format
   DO <- DO |> dplyr::rename(datetime = DateTime,
-                            site_id = Reservoir,
-                            depth_m = Depth_m,
-                            observation = DO_mgL) 
+                        site_id = Reservoir,
+                        depth_m = Depth_m,
+                        observation = DO_mgL) 
   
   #add variable column
   DO$variable <- "DO_mgL"
   
-  #now calculate MOM binary
-  MOM_binary <- DO |> dplyr::group_by(datetime, site_id, variable) |>
-    dplyr::mutate(MOM_binary = ifelse(observation < 2 & depth_m >= 2 & depth_m <= 8, 1, 0)) |>
-    dplyr::summarise(MOM_binary = max(MOM_binary)) |> dplyr::select(-variable)
-
-  #rename columns to match targets file
-  MOM_binary <- MOM_binary |>
-    dplyr::rename(observation = MOM_binary)
+  #order DO by date, site, then depth
+  DO <- DO |> dplyr::arrange(datetime, site_id, depth_m)
   
-  MOM_binary$variable <- "MetalimneticOxygenMinimum_binary"
+  #now calculate MOM bounds
+  MOM_bounds <- DO |> dplyr::group_by(datetime, site_id, variable) |>
+    dplyr::summarise(MetalimneticOxygenMinimum_upperbound = 
+                       round(first(depth_m[observation < 2]),1),
+                     MetalimneticOxygenMinimum_lowerbound = 
+                       round(last(depth_m[observation < 2]),1))
+
+  #wide to long
+  MOM_bounds_long <- MOM_bounds |> select(-variable) |> 
+    tidyr::pivot_longer(cols = MetalimneticOxygenMinimum_upperbound:
+                          MetalimneticOxygenMinimum_lowerbound, names_to = "variable")
+  
+  #rename columns to match targets file
+  MOM_bounds_long <- MOM_bounds_long |>
+    rename(observation = value)
   
   #Depth is na bc full water column variable
   MOM_binary$depth_m <- NA
   
   # return dataframe formatted to match FLARE targets
-  return(MOM_binary)
-  
-  }
-
-
+  return(MOM_binary) 
+}
